@@ -1,0 +1,8 @@
+﻿{
+  "name": "modern-chess",
+  "version": "1.0.0",
+  "dependencies": [
+    "sfml",
+    "imgui-sfml"
+  ]
+}
