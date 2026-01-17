@@ -149,23 +149,14 @@ void SfmlRenderer::ensureSpriteScale(float tileSize) {
     for (auto &s : pieceSprites_) s.setScale(sx, sy);
 }
 
-void SfmlRenderer::setSelected(std::optional<chess::Square> sel) { selected_ = sel; }
-void SfmlRenderer::startDrag(std::optional<chess::Square> source, sf::Vector2f mousePos) { dragSource_ = source; dragPosition_ = mousePos; dragging_ = source.has_value(); }
-void SfmlRenderer::updateDrag(sf::Vector2f mousePos) { if (dragging_) dragPosition_ = mousePos; }
-void SfmlRenderer::stopDrag() { dragging_ = false; dragSource_.reset(); dragPosition_.reset(); }
+void SfmlRenderer::setSelected(std::optional<chess::Square> sel) noexcept { selected_ = sel; }
 
-void SfmlRenderer::render(const chess::IGame& game) {
-    // Clear first
-    window_.clear(sf::Color::Black);
+void SfmlRenderer::setDragState(std::optional<chess::Square> source, std::optional<sf::Vector2f> position) noexcept {
+    dragSource_ = source;
+    dragPosition_ = position;
+}
 
-    // Compute tile size from current window size
-    const auto size = window_.getSize();
-    const float tile = std::min(size.x, size.y) / 8.f;
-
-    // If using textures, ensure scale fits current tile size
-    ensureSpriteScale(tile);
-
-    // Draw board (8x8 alternating squares)
+void SfmlRenderer::drawBoard(float tile) noexcept {
     for (int rank = 0; rank < 8; ++rank) {
         for (int file = 0; file < 8; ++file) {
             sf::RectangleShape rect(sf::Vector2f(tile, tile));
@@ -175,38 +166,40 @@ void SfmlRenderer::render(const chess::IGame& game) {
             window_.draw(rect);
         }
     }
+}
 
-    // Draw selection highlight (semi-transparent)
-    if (selected_) {
-        const auto s = *selected_;
-        sf::RectangleShape highlight(sf::Vector2f(tile, tile));
-        highlight.setPosition(s.file * tile, s.rank * tile);
-        highlight.setFillColor(sf::Color(255, 255, 0, 100)); // yellow translucent
-        highlight.setOutlineColor(sf::Color(200, 200, 0, 200));
-        highlight.setOutlineThickness(2.f);
-        window_.draw(highlight);
-    }
+void SfmlRenderer::drawSelectionHighlight(float tile) noexcept {
+    if (!selected_) return;
 
-    // Draw pieces
+    const auto s = *selected_;
+    sf::RectangleShape highlight(sf::Vector2f(tile, tile));
+    highlight.setPosition(s.file * tile, s.rank * tile);
+    highlight.setFillColor(sf::Color(255, 255, 0, 100));
+    highlight.setOutlineColor(sf::Color(200, 200, 0, 200));
+    highlight.setOutlineThickness(2.f);
+    window_.draw(highlight);
+}
+
+void SfmlRenderer::drawPieces(const chess::IGame& game, float tile) {
     for (int rank = 0; rank < chess::Board::size; ++rank) {
         for (int file = 0; file < chess::Board::size; ++file) {
             const chess::Square sq{rank, file};
             const auto& optPiece = game.board().at(sq);
             if (!optPiece) continue;
 
-            // If dragging a piece from dragSource_, do not draw it at its origin.
-            if (dragging_ && dragSource_ && dragSource_->rank == rank && dragSource_->file == file) {
+            // Skip if dragging this piece
+            if (dragSource_ && dragSource_->rank == rank && dragSource_->file == file) {
                 continue;
             }
 
             const auto& p = *optPiece;
+            const int idx = spriteIndex(p.type, p.color);
+
             if (texturesLoaded_) {
-                const int idx = spriteIndex(p.type, p.color);
                 sf::Sprite spr = pieceSprites_[idx];
                 spr.setPosition(file * tile, rank * tile);
                 window_.draw(spr);
             } else if (fontLoaded_) {
-                const int idx = spriteIndex(p.type, p.color);
                 auto& txt = pieceTexts_[idx];
                 txt.setString(unicodeGlyph(p.type, p.color));
                 txt.setCharacterSize(static_cast<unsigned>(tile * 0.9f));
@@ -214,68 +207,78 @@ void SfmlRenderer::render(const chess::IGame& game) {
                 txt.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
                 txt.setPosition(file * tile + tile / 2.f, rank * tile + tile / 2.f);
                 txt.setFillColor(p.color == chess::Color::White ? sf::Color::White : sf::Color::Black);
-                txt.setOutlineColor(sf::Color(50,50,50));
+                txt.setOutlineColor(sf::Color(50, 50, 50));
                 txt.setOutlineThickness(2.f);
                 window_.draw(txt);
             } else {
                 sf::CircleShape piece(tile * 0.38f);
                 piece.setOrigin(piece.getRadius(), piece.getRadius());
                 piece.setPosition(file * tile + tile / 2.f, rank * tile + tile / 2.f);
-                piece.setFillColor(p.color == chess::Color::White ? sf::Color::White : sf::Color(40,40,40));
+                piece.setFillColor(p.color == chess::Color::White ? sf::Color::White : sf::Color(40, 40, 40));
                 piece.setOutlineColor(sf::Color::Black);
                 piece.setOutlineThickness(2.f);
                 window_.draw(piece);
-                // small crown/mark for non-pawn to hint piece type (simple)
+
                 if (p.type != chess::PieceType::Pawn) {
                     sf::RectangleShape crown(sf::Vector2f(tile * 0.45f, tile * 0.08f));
-                    crown.setOrigin(crown.getSize().x/2.f, crown.getSize().y/2.f);
+                    crown.setOrigin(crown.getSize().x / 2.f, crown.getSize().y / 2.f);
                     crown.setPosition(file * tile + tile / 2.f, rank * tile + tile * 0.28f);
-                    crown.setFillColor(sf::Color(200,200,50));
+                    crown.setFillColor(sf::Color(200, 200, 50));
                     window_.draw(crown);
                 }
             }
         }
     }
+}
 
-    // Draw dragged piece following mouse (if any)
-    if (dragging_ && dragSource_ && dragPosition_) {
-        const auto src = *dragSource_;
-        const auto& optPiece = game.board().at(src);
-        if (optPiece) {
-            const auto& p = *optPiece;
-            if (texturesLoaded_) {
-                const int idx = spriteIndex(p.type, p.color);
-                sf::Sprite spr = pieceSprites_[idx];
-                // center sprite on mouse
-                const auto rect = spr.getGlobalBounds();
-                spr.setOrigin(0.f, 0.f);
-                spr.setPosition(*dragPosition_ - sf::Vector2f(rect.width/2.f, rect.height/2.f));
-                window_.draw(spr);
-            } else if (fontLoaded_) {
-                const int idx = spriteIndex(p.type, p.color);
-                auto& txt = pieceTexts_[idx];
-                txt.setString(unicodeGlyph(p.type, p.color));
-                txt.setCharacterSize(static_cast<unsigned>(tile * 0.9f));
-                const sf::FloatRect bounds = txt.getLocalBounds();
-                txt.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
-                txt.setPosition(*dragPosition_);
-                txt.setFillColor(p.color == chess::Color::White ? sf::Color::White : sf::Color::Black);
-                txt.setOutlineColor(sf::Color(50,50,50));
-                txt.setOutlineThickness(2.f);
-                window_.draw(txt);
-            } else {
-                sf::CircleShape piece(tile * 0.38f);
-                piece.setOrigin(piece.getRadius(), piece.getRadius());
-                piece.setPosition(*dragPosition_);
-                piece.setFillColor(p.color == chess::Color::White ? sf::Color::White : sf::Color(40,40,40));
-                piece.setOutlineColor(sf::Color::Black);
-                piece.setOutlineThickness(2.f);
-                window_.draw(piece);
-            }
-        }
+void SfmlRenderer::drawDraggedPiece(const chess::IGame& game, float tile) {
+    if (!dragSource_ || !dragPosition_) return;
+
+    const auto& optPiece = game.board().at(*dragSource_);
+    if (!optPiece) return;
+
+    const auto& p = *optPiece;
+    const int idx = spriteIndex(p.type, p.color);
+
+    if (texturesLoaded_) {
+        sf::Sprite spr = pieceSprites_[idx];
+        const auto rect = spr.getGlobalBounds();
+        spr.setOrigin(0.f, 0.f);
+        spr.setPosition(*dragPosition_ - sf::Vector2f(rect.width / 2.f, rect.height / 2.f));
+        window_.draw(spr);
+    } else if (fontLoaded_) {
+        auto& txt = pieceTexts_[idx];
+        txt.setString(unicodeGlyph(p.type, p.color));
+        txt.setCharacterSize(static_cast<unsigned>(tile * 0.9f));
+        const sf::FloatRect bounds = txt.getLocalBounds();
+        txt.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
+        txt.setPosition(*dragPosition_);
+        txt.setFillColor(p.color == chess::Color::White ? sf::Color::White : sf::Color::Black);
+        txt.setOutlineColor(sf::Color(50, 50, 50));
+        txt.setOutlineThickness(2.f);
+        window_.draw(txt);
+    } else {
+        sf::CircleShape piece(tile * 0.38f);
+        piece.setOrigin(piece.getRadius(), piece.getRadius());
+        piece.setPosition(*dragPosition_);
+        piece.setFillColor(p.color == chess::Color::White ? sf::Color::White : sf::Color(40, 40, 40));
+        piece.setOutlineColor(sf::Color::Black);
+        piece.setOutlineThickness(2.f);
+        window_.draw(piece);
     }
+}
 
-    // Present frame
+void SfmlRenderer::render(const chess::IGame& game) {
+    window_.clear(sf::Color::Black);
+    const auto size = window_.getSize();
+    const float tile = std::min(size.x, size.y) / 8.f;
+    ensureSpriteScale(tile);
+
+    drawBoard(tile);
+    drawSelectionHighlight(tile);
+    drawPieces(game, tile);
+    drawDraggedPiece(game, tile);
+
     window_.display();
 }
 

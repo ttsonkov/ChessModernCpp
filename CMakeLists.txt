@@ -18,6 +18,7 @@ add_executable(ModernChess
     src/core/ChessGame.cpp
     src/core/Rules.cpp
     src/ui/SfmlRenderer.cpp
+    src/ui/SfmlInputHandler.cpp
 )
 
 target_include_directories(ModernChess PRIVATE src)
