@@ -21,6 +21,9 @@ public:
     // Drag state (called by input handler)
     void setDragState(std::optional<chess::Square> source, std::optional<sf::Vector2f> position) noexcept;
 
+    // Draw a piece at a specific pixel position (for animation)
+    void drawPieceAt(const chess::Piece& piece, sf::Vector2f pos, float tile);
+
 private:
     sf::RenderWindow& window_;
     std::optional<chess::Square> selected_;

@@ -1,6 +1,7 @@
 ﻿#include <SFML/Graphics.hpp>
 #include "core/ChessGame.hpp"
 #include "ui/SfmlRenderer.hpp"
+#include "ui/SfmlInputHandler.hpp"
 #include "app/Application.hpp"
 
 int main() {
@@ -8,7 +9,8 @@ int main() {
 
     auto game = std::make_unique<chess::ChessGame>();
     auto renderer = std::make_unique<ui::SfmlRenderer>(window);
+    auto inputHandler = std::make_unique<ui::SfmlInputHandler>(window);
 
-    Application app(std::move(game), std::move(renderer));
+    Application app(std::move(game), std::move(renderer), std::move(inputHandler));
     app.run();
 }

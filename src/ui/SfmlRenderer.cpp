@@ -268,6 +268,34 @@ void SfmlRenderer::drawDraggedPiece(const chess::IGame& game, float tile) {
     }
 }
 
+void SfmlRenderer::drawPieceAt(const chess::Piece& piece, sf::Vector2f pos, float tile) {
+    const int idx = spriteIndex(piece.type, piece.color);
+    if (texturesLoaded_) {
+        sf::Sprite spr = pieceSprites_[idx];
+        spr.setPosition(pos);
+        window_.draw(spr);
+    } else if (fontLoaded_) {
+        auto& txt = pieceTexts_[idx];
+        txt.setString(unicodeGlyph(piece.type, piece.color));
+        txt.setCharacterSize(static_cast<unsigned>(tile * 0.9f));
+        const sf::FloatRect bounds = txt.getLocalBounds();
+        txt.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
+        txt.setPosition(pos.x + tile / 2.f, pos.y + tile / 2.f);
+        txt.setFillColor(piece.color == chess::Color::White ? sf::Color::White : sf::Color::Black);
+        txt.setOutlineColor(sf::Color(50, 50, 50));
+        txt.setOutlineThickness(2.f);
+        window_.draw(txt);
+    } else {
+        sf::CircleShape shape(tile * 0.38f);
+        shape.setOrigin(shape.getRadius(), shape.getRadius());
+        shape.setPosition(pos.x + tile / 2.f, pos.y + tile / 2.f);
+        shape.setFillColor(piece.color == chess::Color::White ? sf::Color::White : sf::Color(40, 40, 40));
+        shape.setOutlineColor(sf::Color::Black);
+        shape.setOutlineThickness(2.f);
+        window_.draw(shape);
+    }
+}
+
 void SfmlRenderer::render(const chess::IGame& game) {
     window_.clear(sf::Color::Black);
     const auto size = window_.getSize();

@@ -1,10 +1,37 @@
-#include "SfmlInputHandler.hpp"
+﻿#include "SfmlInputHandler.hpp"
 #include <algorithm>
+#include <chrono>
 #include "core/Board.hpp"
 
 namespace ui {
 
 SfmlInputHandler::SfmlInputHandler(sf::RenderWindow& window) : window_(window) {}
+
+bool SfmlInputHandler::isRunning() const noexcept {
+    return running_ && window_.isOpen();
+}
+
+void SfmlInputHandler::startAnimation(chess::Square from, chess::Square to, float duration) {
+    animation_ = AnimationState{
+        true, from, to, 0.0f, std::chrono::steady_clock::now(), duration
+    };
+}
+
+void SfmlInputHandler::stopAnimation() {
+    animation_.reset();
+}
+
+void SfmlInputHandler::updateAnimation() {
+    if (!animation_ || !animation_->active) return;
+    using namespace std::chrono;
+    auto now = steady_clock::now();
+    float elapsed = duration_cast<duration<float>>(now - animation_->startTime).count();
+    float progress = std::clamp(elapsed / animation_->duration, 0.0f, 1.0f);
+    animation_->progress = progress;
+    if (progress >= 1.0f) {
+        animation_->active = false;
+    }
+}
 
 std::optional<chess::Move> SfmlInputHandler::processInput() {
     sf::Event event;
@@ -14,6 +41,7 @@ std::optional<chess::Move> SfmlInputHandler::processInput() {
         switch (event.type) {
             case sf::Event::Closed:
                 window_.close();
+                running_ = false;
                 break;
 
             case sf::Event::MouseButtonPressed:
@@ -40,6 +68,8 @@ std::optional<chess::Move> SfmlInputHandler::processInput() {
                 if (event.mouseButton.button == sf::Mouse::Left && dragSource_) {
                     if (auto target = pixelToSquare(event.mouseButton.x, event.mouseButton.y)) {
                         if (*target != *dragSource_) {
+                            // Стартирай анимация на местене
+                            startAnimation(*dragSource_, *target);
                             move = chess::Move{*dragSource_, *target};
                         }
                     }

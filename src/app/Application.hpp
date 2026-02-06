@@ -7,7 +7,8 @@
 class Application {
 public:
     Application(std::unique_ptr<chess::IGame> game,
-                std::unique_ptr<ui::IRenderer> renderer);
+                std::unique_ptr<ui::IRenderer> renderer,
+                std::unique_ptr<ui::IInputHandler> inputHandler);
     ~Application();
     
     void run();
