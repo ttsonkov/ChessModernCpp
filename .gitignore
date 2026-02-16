@@ -1,0 +1,151 @@
+# =============================================================================
+# Build Directories
+# =============================================================================
+
+# CMake build directories
+build/
+out/
+cmake-build-*/
+
+# Visual Studio build directories
+x64/
+x86/
+Debug/
+Release/
+RelWithDebInfo/
+MinSizeRel/
+
+# =============================================================================
+# IDE and Editor Files
+# =============================================================================
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj.user
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains IDEs (CLion, etc.)
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# =============================================================================
+# CMake Generated Files
+# =============================================================================
+
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+CMakeSettings.json
+CMakePresets.json
+CMakeUserPresets.json
+
+# =============================================================================
+# Compiled Files
+# =============================================================================
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Object files
+*.o
+*.obj
+*.ko
+*.elf
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Precompiled headers
+*.gch
+*.pch
+
+# =============================================================================
+# vcpkg
+# =============================================================================
+
+vcpkg_installed/
+
+# =============================================================================
+# OS Generated Files
+# =============================================================================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.directory
+
+# =============================================================================
+# Temporary Files
+# =============================================================================
+
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# Log files
+*.log
+
+# =============================================================================
+# Package Manager Directories
+# =============================================================================
+
+# Conan
+conan/
+conanbuildinfo.*
+conaninfo.txt
+graph_info.json
+
+# =============================================================================
+# Test Output
+# =============================================================================
+
+Testing/
+test-results/
+coverage/
+*.gcov
+*.gcda
+*.gcno
+
+# =============================================================================
+# Documentation Build
+# =============================================================================
+
+docs/_build/
+doxygen/
+html/
+latex/
