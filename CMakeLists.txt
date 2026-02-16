@@ -20,8 +20,55 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Dependencies
 # ============================================================================
 
-find_package(SFML 2.6 REQUIRED COMPONENTS graphics window system)
-find_package(ImGui-SFML REQUIRED)
+include(FetchContent)
+
+# Try to find SFML locally first, otherwise fetch it
+find_package(SFML 2.6 QUIET COMPONENTS graphics window system)
+
+if(NOT SFML_FOUND)
+    message(STATUS "SFML not found locally, fetching from GitHub...")
+    
+    FetchContent_Declare(
+        SFML
+        GIT_REPOSITORY https://github.com/SFML/SFML.git
+        GIT_TAG 2.6.1
+        GIT_SHALLOW TRUE
+    )
+    
+    # SFML options
+    set(SFML_BUILD_AUDIO OFF CACHE BOOL "" FORCE)
+    set(SFML_BUILD_NETWORK OFF CACHE BOOL "" FORCE)
+    
+    FetchContent_MakeAvailable(SFML)
+endif()
+
+# Try to find ImGui-SFML locally first, otherwise fetch it
+find_package(ImGui-SFML QUIET)
+
+if(NOT ImGui-SFML_FOUND)
+    message(STATUS "ImGui-SFML not found locally, fetching from GitHub...")
+    
+    FetchContent_Declare(
+        imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        GIT_TAG v1.90.1
+        GIT_SHALLOW TRUE
+    )
+    
+    FetchContent_Declare(
+        imgui-sfml
+        GIT_REPOSITORY https://github.com/SFML/imgui-sfml.git
+        GIT_TAG 2.6.x
+        GIT_SHALLOW TRUE
+    )
+    
+    # ImGui-SFML options
+    set(IMGUI_DIR ${CMAKE_BINARY_DIR}/_deps/imgui-src CACHE PATH "" FORCE)
+    set(IMGUI_SFML_FIND_SFML OFF CACHE BOOL "" FORCE)
+    set(IMGUI_SFML_IMGUI_DEMO ON CACHE BOOL "" FORCE)
+    
+    FetchContent_MakeAvailable(imgui imgui-sfml)
+endif()
 
 # ============================================================================
 # Source Files
