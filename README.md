@@ -1,8 +1,8 @@
 # Modern Chess
 
-A modern chess application built with C++20 and SFML, featuring smooth animations, drag-and-drop interaction, and clean architecture following SOLID principles.
+ **The idea of the project is to showcase the best practices in C++ described here: [Coding Guidelines (CLAUDE.md)](CLAUDE.md) for project standards and conventions.**
 
-> **📖 The idea of the project is to showcase the best practices in C++ described here: [Coding Guidelines (CLAUDE.md)](CLAUDE.md) for project standards and conventions.**
+A modern chess application built with C++20 and SFML, featuring smooth animations, drag-and-drop interaction, and clean architecture following SOLID principles.
 
 ![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
 ![SFML](https://img.shields.io/badge/SFML-2.6-green.svg)
